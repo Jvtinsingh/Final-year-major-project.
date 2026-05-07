@@ -159,7 +159,7 @@ export default function ExamTakingEnvironment() {
 
   const handleSubmit = async () => {
     if(!id) return;
-    if(!confirm('Are you sure you want to submit your exam?')) return;
+    // Removed confirm for smoother demo experience
 
     try {
       let finalScore = 0;
@@ -192,9 +192,9 @@ export default function ExamTakingEnvironment() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto h-full flex flex-col">
-      {/* Full-screen Warning Overlay */}
+      {/* Full-screen Warning Overlay - Disabled for Demo */}
       <AnimatePresence>
-        {showWarning && !isSubmitted && (
+        {false && showWarning && !isSubmitted && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[999] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-4"
