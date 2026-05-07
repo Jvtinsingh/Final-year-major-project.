@@ -1,0 +1,10 @@
+What is the capital of India? | Mumbai | New Delhi | Kolkata | Chennai | 1
+Which of these is a JavaScript library? | React | MongoDB | Docker | Python | 0
+What does CPU stand for? | Central Process Unit | Central Processing Unit | Computer Personal Unit | Central Processor Utility | 1
+Which planet is known as the Red Planet? | Venus | Jupiter | Mars | Saturn | 2
+What is the square root of 64? | 6 | 7 | 8 | 9 | 2
+Which programming language is mainly used for Android development? | Swift | Kotlin | C# | PHP | 1
+What is the largest ocean on Earth? | Indian Ocean | Atlantic Ocean | Arctic Ocean | Pacific Ocean | 3
+Who developed the theory of relativity? | Isaac Newton | Albert Einstein | Galileo Galilei | Nikola Tesla | 1
+Which company developed the iPhone? | Google | Samsung | Apple | Microsoft | 2
+What is the chemical symbol for water? | H2O | CO2 | O2 | NaCl | 0

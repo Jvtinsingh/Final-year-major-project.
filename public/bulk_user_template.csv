@@ -1,0 +1,5 @@
+email,displayName,password
+student1@example.com,John Student,StudentPass123
+student2@example.com,Jane Smith,
+faculty1@example.com,,FacultyPass123
+admin_user@example.com,Admin User,AdminPass@2024
