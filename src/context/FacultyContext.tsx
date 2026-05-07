@@ -168,7 +168,12 @@ export function FacultyProvider({ children }: { children: React.ReactNode }) {
   };
 
   const publishResults = async (id: string) => {
-    await updateDoc(doc(db, 'exams', id), { resultsPublished: true });
+    try {
+      await updateDoc(doc(db, 'exams', id), { resultsPublished: true });
+      toast.success('Results published successfully! Students can now see their scores.');
+    } catch (e) {
+      toast.error('Failed to publish results.');
+    }
   };
 
   const stats = {

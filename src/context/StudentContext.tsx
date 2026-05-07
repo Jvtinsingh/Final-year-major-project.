@@ -115,44 +115,47 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Listen to all available exams globally
-    const unsubExams = onSnapshot(collection(db, 'exams'), async (examSnap: any) => {
-      const allExams = examSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }) as any);
-      
-      // Also listen to this student's specific results/enrollments
-      const q = query(collection(db, 'student_exams'), where('studentId', '==', userData.uid));
-      const unsubStudentExams = onSnapshot(q, (studentSnap: any) => {
-        const studentExamsData = studentSnap.docs.map((d: any) => d.data());
-        
-        const mergedExams = allExams.map((exam: any) => {
-          const studentVersion = studentExamsData.find((se: any) => se.examId === exam.id);
-          return {
-            ...exam,
-            status: studentVersion?.status || 'upcoming',
-            score: studentVersion?.score,
-            submittedAt: studentVersion?.submittedAt,
-            // Use merged totalMarks if available
-            totalMarks: exam.totalMarks || studentVersion?.totalMarks || 100
-          };
-        });
-        
-        setExams(mergedExams);
-      });
+    const unsubExams = onSnapshot(collection(db, 'exams'), (examSnap: any) => {
+      const all = examSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }) as any);
+      setAllExams(all);
+    });
 
-      return () => unsubStudentExams();
+    // Listen to student-specific enrollments/results
+    const q = query(collection(db, 'student_exams'), where('studentId', '==', userData.uid));
+    const unsubStudentExams = onSnapshot(q, (studentSnap: any) => {
+      setStudentExams(studentSnap.docs.map((d: any) => d.data()) as any);
     });
 
     const unsubAnnouncements = onSnapshot(collection(db, 'announcements'), (snap: any) => {
       const all = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }) as any);
-      setAnnouncements(all); // Show all announcements for demo
+      setAnnouncements(all);
     });
 
     const unsubMaterials = onSnapshot(collection(db, 'student_materials'), (snap: any) => {
       const all = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }) as any);
-      setMaterials(all); // Show all materials for demo
+      setMaterials(all);
     });
     
-    return () => { unsubExams(); unsubAnnouncements(); unsubMaterials(); unsubEnroll(); };
-  }, [userData, enrolledSubjectIds]);
+    return () => { unsubExams(); unsubStudentExams(); unsubAnnouncements(); unsubMaterials(); unsubEnroll(); };
+  }, [userData]);
+
+  // Merge logic moved to a separate useEffect
+  const [allExams, setAllExams] = useState<any[]>([]);
+  const [studentExams, setStudentExams] = useState<any[]>([]);
+
+  useEffect(() => {
+    const merged = allExams.map((exam: any) => {
+      const studentVersion = studentExams.find((se: any) => se.examId === exam.id);
+      return {
+        ...exam,
+        status: studentVersion?.status || 'upcoming',
+        score: studentVersion?.score,
+        submittedAt: studentVersion?.submittedAt,
+        totalMarks: exam.totalMarks || studentVersion?.totalMarks || 100
+      };
+    });
+    setExams(merged);
+  }, [allExams, studentExams]);
 
   useEffect(() => {
     // Calculate performance based on published results
