@@ -270,7 +270,7 @@ export default function ExamsPage() {
                                   </button>
                                   {exam.status === 'published' && !exam.resultsPublished && (
                                      <button 
-                                       onClick={() => { if(confirm('Publish results for all students?')) publishResults(exam.id) }} 
+                                       onClick={() => publishResults(exam.id)} 
                                        className="w-24 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded shadow-sm transition"
                                      >
                                         Publish Results
