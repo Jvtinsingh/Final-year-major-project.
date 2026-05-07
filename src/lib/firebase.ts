@@ -142,19 +142,41 @@ export const signInWithPopup = async (a: any, p: any) => {
 
 // --- Firestore Wrappers ---
 
-// --- In-Memory Store for Mock Mode ---
-const MOCK_STORE: Record<string, any[]> = {
-  users: Object.values(MOCK_USERS),
-  subjects: MOCK_COURSES,
-  exams: [],
-  faculty_materials: [],
-  announcements: [],
-  student_exams: []
+// --- In-Memory Store with LocalStorage Persistence for Mock Mode ---
+const getInitialStore = () => {
+  const base = {
+    users: Object.values(MOCK_USERS),
+    subjects: MOCK_COURSES,
+    exams: [],
+    faculty_materials: [],
+    announcements: [],
+    student_exams: []
+  };
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('academetrics_mock_store');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return base;
+      }
+    }
+  }
+  return base;
+};
+
+let MOCK_STORE: Record<string, any[]> = getInitialStore();
+
+const saveStore = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('academetrics_mock_store', JSON.stringify(MOCK_STORE));
+  }
 };
 
 const LISTENERS: Record<string, Function[]> = {};
 
 const triggerListeners = (path: string) => {
+  saveStore();
   if (LISTENERS[path]) {
     const data = MOCK_STORE[path] || [];
     const snapshot = {
