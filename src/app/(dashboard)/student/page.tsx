@@ -66,7 +66,15 @@ export default function StudentDashboard() {
 
   const quickActions = [
     { title: 'Join a Course', action: () => setIsJoinModalOpen(true), icon: Plus, color: 'text-indigo-600', bg: 'bg-indigo-50 hover:bg-indigo-100' },
-    { title: 'Take Active Exam', href: '/student/exams/demo-question-1', icon: PlayCircle, color: 'text-rose-600', bg: 'bg-rose-50 hover:bg-rose-100' },
+    { 
+      title: 'Take Active Exam', 
+      href: exams.find(e => e.status !== 'completed')?.id 
+        ? `/student/exams/${exams.find(e => e.status !== 'completed')?.id}` 
+        : '/student/exams', 
+      icon: PlayCircle, 
+      color: 'text-rose-600', 
+      bg: 'bg-rose-50 hover:bg-rose-100' 
+    },
     { title: 'Study Materials', href: '/student/materials', icon: BookOpen, color: 'text-teal-600', bg: 'bg-teal-50 hover:bg-teal-100' },
     { title: 'View Progress', href: '/student/progress', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50 hover:bg-purple-100' },
   ];

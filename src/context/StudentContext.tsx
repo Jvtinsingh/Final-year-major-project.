@@ -114,29 +114,44 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    const q = query(collection(db, 'student_exams'), where('studentId', '==', userData.uid));
-    const unsubStudentExams = onSnapshot(q, async (snap: any) => {
-      const studentExamsData = snap.docs.map((d: any) => ({id: d.id, ...d.data()}) as any);
-      const enrichedExams = await Promise.all(studentExamsData.map(async (se: any) => {
-        const examDoc = await getDoc(doc(db, 'exams', se.examId)) as any;
-        return { ...se, resultsPublished: examDoc.exists() ? examDoc.data().resultsPublished : false };
-      }));
-      setExams(enrichedExams);
+    // Listen to all available exams globally
+    const unsubExams = onSnapshot(collection(db, 'exams'), async (examSnap: any) => {
+      const allExams = examSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }) as any);
+      
+      // Also listen to this student's specific results/enrollments
+      const q = query(collection(db, 'student_exams'), where('studentId', '==', userData.uid));
+      const unsubStudentExams = onSnapshot(q, (studentSnap: any) => {
+        const studentExamsData = studentSnap.docs.map((d: any) => d.data());
+        
+        const mergedExams = allExams.map((exam: any) => {
+          const studentVersion = studentExamsData.find((se: any) => se.examId === exam.id);
+          return {
+            ...exam,
+            status: studentVersion?.status || 'upcoming',
+            score: studentVersion?.score,
+            submittedAt: studentVersion?.submittedAt,
+            // Use merged totalMarks if available
+            totalMarks: exam.totalMarks || studentVersion?.totalMarks || 100
+          };
+        });
+        
+        setExams(mergedExams);
+      });
+
+      return () => unsubStudentExams();
     });
 
     const unsubAnnouncements = onSnapshot(collection(db, 'announcements'), (snap: any) => {
-      const all = snap.docs.map((d: any) => ({id: d.id, ...d.data()}) as any);
-      const filtered = all.filter((a: any) => !a.subjectId || enrolledSubjectIds.includes(a.subjectId));
-      setAnnouncements(filtered);
+      const all = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }) as any);
+      setAnnouncements(all); // Show all announcements for demo
     });
 
     const unsubMaterials = onSnapshot(collection(db, 'student_materials'), (snap: any) => {
-      const all = snap.docs.map((d: any) => ({id: d.id, ...d.data()}) as any);
-      const filtered = all.filter((m: any) => !m.subjectId || enrolledSubjectIds.includes(m.subjectId));
-      setMaterials(filtered);
+      const all = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }) as any);
+      setMaterials(all); // Show all materials for demo
     });
     
-    return () => { unsubStudentExams(); unsubAnnouncements(); unsubMaterials(); unsubEnroll(); };
+    return () => { unsubExams(); unsubAnnouncements(); unsubMaterials(); unsubEnroll(); };
   }, [userData, enrolledSubjectIds]);
 
   useEffect(() => {
@@ -235,7 +250,10 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
   const submitExam = async (examId: string, score: number, totalMarks: number) => {
     if (!userData) return;
     const docId = `${userData.uid}_${examId}`;
-    await updateDoc(doc(db, 'student_exams', docId), {
+    // Use setDoc so it works even if they haven't manually 'joined' the exam first
+    await setDoc(doc(db, 'student_exams', docId), {
+      examId,
+      studentId: userData.uid,
       status: 'completed',
       score,
       totalMarks,
