@@ -206,9 +206,10 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
     const foundExam = foundDoc.data();
     const docId = `${userData.uid}_${foundDoc.id}`;
     
-    // Check if enrolled
+    // Check if already in the list
     if (exams.some(e => e.id === foundDoc.id)) {
-      throw new Error("You are already enrolled in this exam!");
+      console.log("Already enrolled in this exam.");
+      return;
     }
     
     // Enroll the student by writing a cloned metadata document to student_exams
