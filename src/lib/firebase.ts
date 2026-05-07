@@ -186,6 +186,29 @@ const triggerListeners = (path: string) => {
   }
 };
 
+// --- Cross-Tab Sync for Mock Mode ---
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'academetrics_mock_store' && e.newValue) {
+      try {
+        const newData = JSON.parse(e.newValue);
+        // Update local MOCK_STORE
+        Object.assign(MOCK_STORE, newData);
+        // Trigger all active listeners to refresh UI in this tab
+        Object.keys(LISTENERS).forEach(path => {
+          const data = MOCK_STORE[path] || [];
+          const snapshot = {
+            docs: data.map(d => ({ id: d.id || d.uid, data: () => d }))
+          };
+          LISTENERS[path].forEach(cb => cb(snapshot));
+        });
+      } catch (err) {
+        console.error('Failed to sync mock store across tabs:', err);
+      }
+    }
+  });
+}
+
 // --- Firestore Wrappers ---
 
 export const doc = (d: any, coll: string, id: string) => {

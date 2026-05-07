@@ -82,6 +82,8 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
   const { userData } = useAuth();
   // Mock Data
   const [exams, setExams] = useState<StudentExam[]>([]);
+  const [allExams, setAllExams] = useState<any[]>([]);
+  const [studentExams, setStudentExams] = useState<any[]>([]);
   const [announcements, setAnnouncements] = useState<StudentAnnouncement[]>([]);
   const [materials, setMaterials] = useState<StudentMaterial[]>([]);
   const [performance, setPerformance] = useState<SubjectPerformance[]>([]);
@@ -139,15 +141,13 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
     return () => { unsubExams(); unsubStudentExams(); unsubAnnouncements(); unsubMaterials(); unsubEnroll(); };
   }, [userData]);
 
-  // Merge logic moved to a separate useEffect
-  const [allExams, setAllExams] = useState<any[]>([]);
-  const [studentExams, setStudentExams] = useState<any[]>([]);
-
   useEffect(() => {
     const merged = allExams.map((exam: any) => {
       const studentVersion = studentExams.find((se: any) => se.examId === exam.id);
       return {
         ...exam,
+        // Explicitly preserve resultsPublished from the main exam record
+        resultsPublished: exam.resultsPublished || false,
         status: studentVersion?.status || 'upcoming',
         score: studentVersion?.score,
         submittedAt: studentVersion?.submittedAt,
