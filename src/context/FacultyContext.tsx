@@ -107,7 +107,6 @@ export function FacultyProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!userData) return;
 
-    const unsubExams = onSnapshot(collection(db, 'exams'), (snap: any) => setExams(snap.docs.map((d: any) => ({ id: d.id, ...d.data() }) as any)));
     const unsubMaterials = onSnapshot(collection(db, 'faculty_materials'), (snap: any) => setMaterials(snap.docs.map((d: any) => ({ id: d.id, ...d.data() }) as any)));
     const unsubAnnouncements = onSnapshot(collection(db, 'announcements'), (snap: any) => setAnnouncements(snap.docs.map((d: any) => ({ id: d.id, ...d.data() }) as any)));
 
