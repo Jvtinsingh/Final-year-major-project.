@@ -15,7 +15,19 @@ import {
   Mail
 } from 'lucide-react';
 
+import { useAuth } from '@/context/AuthContext';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
 export default function LandingPage() {
+  const { userData, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && userData) {
+      router.push(`/${userData.role}`);
+    }
+  }, [userData, loading, router]);
   return (
     <div className="min-h-screen bg-[#FBFBFF] text-[#1E1E2F] selection:bg-blue-600/30 font-sans overflow-x-hidden">
       {/* Navbar */}

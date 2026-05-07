@@ -69,29 +69,74 @@ export const signInWithEmailAndPassword = async (a: any, email: string, p: strin
   if (IS_MOCK) {
     console.log('[Mock-Auth] Attempting login for:', email);
     const user = (MOCK_USERS as any)[email];
-    if (user) return { user };
+    if (user) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('mock_user', JSON.stringify(user));
+        // Trigger auth state change immediately
+        triggerAuthListeners(user);
+      }
+      return { user };
+    }
     throw new Error('Mock authentication failed: User not found in MOCK_USERS');
   }
   return firebaseSignIn(auth, email, p);
 };
 
 export const createUserWithEmailAndPassword = async (a: any, email: string, p: string) => {
-  if (IS_MOCK) return { user: { uid: `mock-${Date.now()}`, email } };
+  if (IS_MOCK) {
+    const user = { uid: `mock-${Date.now()}`, email };
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mock_user', JSON.stringify(user));
+      triggerAuthListeners(user);
+    }
+    return { user };
+  }
   return firebaseCreateUser(auth, email, p);
 };
 
+let authListeners: any[] = [];
+const triggerAuthListeners = (user: any) => {
+  authListeners.forEach(cb => cb(user));
+};
+
 export const onAuthStateChanged = (a: any, cb: any) => {
-  if (IS_MOCK) return auth.onAuthStateChanged(cb);
+  if (IS_MOCK) {
+    authListeners.push(cb);
+    // Initial check
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('mock_user');
+      const user = stored ? JSON.parse(stored) : null;
+      setTimeout(() => cb(user), 500);
+    } else {
+      setTimeout(() => cb(null), 500);
+    }
+    return () => {
+      authListeners = authListeners.filter(l => l !== cb);
+    };
+  }
   return firebaseOnAuth(auth, cb);
 };
 
 export const signOut = async (a: any) => {
-  if (IS_MOCK) return auth.signOut();
+  if (IS_MOCK) {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('mock_user');
+      triggerAuthListeners(null);
+    }
+    return;
+  }
   return firebaseSignOut(auth);
 };
 
 export const signInWithPopup = async (a: any, p: any) => {
-  if (IS_MOCK) return { user: (MOCK_USERS as any)['student@academetrics.io'] };
+  if (IS_MOCK) {
+    const user = (MOCK_USERS as any)['student@academetrics.io'];
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mock_user', JSON.stringify(user));
+      triggerAuthListeners(user);
+    }
+    return { user };
+  }
   return firebasePopup(auth, p);
 };
 
@@ -164,18 +209,42 @@ export const onSnapshot = (ref: any, cb: any) => {
   if (IS_MOCK) {
     const path = ref.path || ref.coll;
     if (!LISTENERS[path]) LISTENERS[path] = [];
-    LISTENERS[path].push(cb);
+    
+    const wrappedCb = (snapshot: any) => {
+      // Apply filters if any
+      if (ref.constraints) {
+        let filteredDocs = snapshot.docs;
+        ref.constraints.forEach((c: any) => {
+          if (c.field && c.op === '==' ) {
+            filteredDocs = filteredDocs.filter((d: any) => d.data()[c.field] === c.value);
+          }
+        });
+        cb({ docs: filteredDocs });
+      } else {
+        cb(snapshot);
+      }
+    };
+
+    LISTENERS[path].push(wrappedCb);
     
     // Initial trigger
     const data = MOCK_STORE[path] || [];
     setTimeout(() => {
+      let initialData = data;
+      if (ref.constraints) {
+        ref.constraints.forEach((c: any) => {
+          if (c.field && c.op === '==' ) {
+            initialData = initialData.filter((d: any) => d[c.field] === c.value);
+          }
+        });
+      }
       cb({
-        docs: data.map(d => ({ id: d.id || d.uid, data: () => d }))
+        docs: initialData.map(d => ({ id: d.id || d.uid, data: () => d }))
       });
     }, 100);
     
     return () => {
-      LISTENERS[path] = LISTENERS[path].filter(listener => listener !== cb);
+      LISTENERS[path] = LISTENERS[path].filter(l => l !== wrappedCb);
     };
   }
   return firebaseSnapshot(ref, cb);
@@ -221,8 +290,19 @@ export const deleteDoc = async (docRef: any) => {
 export const getDocs = async (ref: any) => {
   if (IS_MOCK) {
     const path = ref.path || ref.coll;
-    const data = MOCK_STORE[path] || [];
+    let data = MOCK_STORE[path] || [];
+    
+    // Apply filters
+    if (ref.constraints) {
+      ref.constraints.forEach((c: any) => {
+        if (c.field && c.op === '==' ) {
+          data = data.filter((d: any) => d[c.field] === c.value);
+        }
+      });
+    }
+
     return {
+      empty: data.length === 0,
       docs: data.map(d => ({ id: d.id || d.uid, data: () => d }))
     };
   }
@@ -230,7 +310,7 @@ export const getDocs = async (ref: any) => {
 };
 
 export const query = (ref: any, ...constraints: any[]) => {
-  if (IS_MOCK) return { ...ref, constraints };
+  if (IS_MOCK) return { ...ref, constraints: constraints.filter(c => c && c.field) };
   return firebaseQuery(ref, ...constraints);
 };
 

@@ -115,6 +115,9 @@ export function FacultyProvider({ children }: { children: React.ReactNode }) {
     const subjectsQuery = query(collection(db, 'subjects'), where('facultyId', '==', userData.uid));
     const unsubSubjects = onSnapshot(subjectsQuery, (snap: any) => setSubjects(snap.docs.map((d: any) => ({ id: d.id, ...d.data() }) as any)));
 
+    const examsQuery = query(collection(db, 'exams'), where('facultyId', '==', userData.uid));
+    const unsubExams = onSnapshot(examsQuery, (snap: any) => setExams(snap.docs.map((d: any) => ({ id: d.id, ...d.data() }) as any)));
+
     const unsubSubmissions = onSnapshot(collection(db, 'student_exams'), (snap: any) => setSubmissions(snap.docs.map((d: any) => ({ id: d.id, ...d.data() }) as any)));
 
     return () => { unsubExams(); unsubMaterials(); unsubAnnouncements(); unsubSubjects(); unsubSubmissions(); };
@@ -127,6 +130,7 @@ export function FacultyProvider({ children }: { children: React.ReactNode }) {
       await addDoc(collection(db, 'exams'), {
         ...exam,
         examCode,
+        facultyId: userData.uid,
         examsCount: 0,
         resultsPublished: false,
         createdAt: new Date().toISOString()

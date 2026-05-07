@@ -30,7 +30,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, userData, loading: authLoading } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && userData) {
+      router.push(`/${userData.role}`);
+    }
+  }, [userData, authLoading, router]);
 
   const handleLogin = async (e?: React.FormEvent, directEmail?: string) => {
     if (e) e.preventDefault();
